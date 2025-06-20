@@ -1,0 +1,410 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+import os
+import torch
+import torchvision
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+
+data_dir = "/content/drive/MyDrive/Garbage classification"
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
+])
+
+full_dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+
+train_size = int(0.8 * len(full_dataset))
+val_size = len(full_dataset) - train_size
+train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+import torch.nn as nn
+import torchvision.models as models
+
+
+model = models.resnet18(weights=None)
+model.fc = nn.Linear(512, 5)
+
+
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
+
+import torch.optim as optim
+import torch.nn as nn
+
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+
+
+data_dir = '/content/drive/MyDrive/Garbage classification'
+
+
+
+
+
+
+
+
+train_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+val_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+
+
+full_dataset = datasets.ImageFolder(root=data_dir, transform=train_transform)
+
+train_size = int(0.8 * len(full_dataset))
+val_size = len(full_dataset) - train_size
+train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+val_dataset.dataset.transform = val_transform
+
+
+
+
+
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import models
+
+model = models.resnet18(weights=None)
+model.fc = nn.Linear(512, 5)  # 클래스 5개
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.0001)
+
+
+
+
+
+
+
+num_epochs = 20
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+    correct_train = 0
+    total_train = 0
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+        
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        
+        running_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total_train += labels.size(0)
+        correct_train += (predicted == labels).sum().item()
+
+    train_accuracy = correct_train / total_train
+
+    model.eval()
+    correct_val = 0
+    total_val = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = outputs.max(1)
+            total_val += labels.size(0)
+            correct_val += (predicted == labels).sum().item()
+
+    val_accuracy = correct_val / total_val
+
+    print(f"[Epoch {epoch+1}/{num_epochs}] Loss: {running_loss:.4f} | "
+          f"Train Acc: {train_accuracy:.4f} | Val Acc: {val_accuracy:.4f}")
+
+
+## 지피티한테 물어보기
+
+from torchvision.models import resnet18, ResNet18_Weights
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# 1. 디바이스 설정
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# 2. 데이터 경로
+data_dir = "/content/drive/MyDrive/Garbage classification"
+
+# 3. 데이터 전처리 (데이터 증강 포함)
+train_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+    transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+val_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+# 4. 전체 데이터셋 로드
+full_dataset = datasets.ImageFolder(root=data_dir, transform=train_transform)
+train_size = int(0.8 * len(full_dataset))
+val_size = len(full_dataset) - train_size
+train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+val_dataset.dataset.transform = val_transform 
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+# 5. 모델 정의 (사전학습 가중치 사용)
+model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+model.fc = nn.Linear(512, 5)
+model = model.to(device)
+
+# 6. 손실함수 및 optimizer (더 작은 lr 사용)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=5e-5)
+
+
+
+# 7. 학습 루프
+num_epochs = 20
+for epoch in range(num_epochs):
+    model.train()
+    running_loss, correct_train, total_train = 0, 0, 0
+
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total_train += labels.size(0)
+        correct_train += (predicted == labels).sum().item()
+
+    train_accuracy = correct_train / total_train
+
+    # 검증
+    model.eval()
+    correct_val, total_val = 0, 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = outputs.max(1)
+            total_val += labels.size(0)
+            correct_val += (predicted == labels).sum().item()
+
+    val_accuracy = correct_val / total_val
+
+    print(f"[Epoch {epoch+1}/{num_epochs}] Loss: {running_loss:.4f} | "
+          f"Train Acc: {train_accuracy:.4f} | Val Acc: {val_accuracy:.4f}")
+
+
+torch.save(model.state_dict(), "/content/drive/MyDrive/resnet18_5class_final.pth")
+
+import os
+import torch
+import torch.nn.functional as F
+from torchvision import models, transforms
+from PIL import Image
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic']
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = models.resnet18(weights=None)
+model.fc = torch.nn.Linear(512, 5)
+model.load_state_dict(torch.load("/content/drive/MyDrive/resnet18_5class_final.pth"))
+model = model.to(device)
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+root_dir = "/content/drive/MyDrive/Garbage classification"
+y_true, y_pred = [], []
+
+for class_idx, class_name in enumerate(class_names):
+    class_folder = os.path.join(root_dir, class_name)
+    for fname in os.listdir(class_folder):
+        if not fname.lower().endswith(('.png', '.jpg', '.jpeg')):
+            continue
+        img_path = os.path.join(class_folder, fname)
+        image = Image.open(img_path).convert("RGB")
+        input_tensor = transform(image).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            output = model(input_tensor)
+            pred = torch.argmax(F.softmax(output, dim=1), dim=1).item()
+
+        y_true.append(class_idx)
+        y_pred.append(pred)
+
+
+cm = confusion_matrix(y_true, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+
+plt.figure(figsize=(6, 6))
+disp.plot(cmap="Blues", values_format="d")
+plt.title("Confusion Matrix")
+plt.show()
+
+
+import os
+import torch
+import torch.nn.functional as F
+from torchvision import models, transforms
+from PIL import Image
+import matplotlib.pyplot as plt
+
+
+class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic']
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = models.resnet18(weights=None)
+model.fc = torch.nn.Linear(512, 5)
+model.load_state_dict(torch.load("/content/drive/MyDrive/resnet18_5class_final.pth"))
+model = model.to(device)
+model.eval()
+
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+
+test_folder = "/content/drive/MyDrive/test_images"
+image_files = sorted([f for f in os.listdir(test_folder) if f.endswith(('.png', '.jpg', '.jpeg'))])
+
+for fname in image_files:
+    img_path = os.path.join(test_folder, fname)
+    image = Image.open(img_path).convert("RGB")
+    input_tensor = transform(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        output = model(input_tensor)
+        probs = F.softmax(output, dim=1).cpu().numpy().flatten()
+        pred_idx = probs.argmax()
+        pred_label = class_names[pred_idx]
+
+
+
+
+
+
+    plt.figure(figsize=(5, 5))
+    plt.imshow(image)
+    plt.title(f"예측: {pred_label}\n파일명: {fname}")
+    plt.axis("off")
+    plt.show()
+
+
+import os
+import torch
+import torch.nn.functional as F
+from torchvision import models, transforms
+from PIL import Image
+import matplotlib.pyplot as plt
+
+class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic']
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = models.resnet18(weights=None)
+model.fc = torch.nn.Linear(512, 5)
+model.load_state_dict(torch.load("/content/drive/MyDrive/resnet18_5class_final.pth"))
+model = model.to(device)
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
+
+nukki_folder = "/content/drive/MyDrive/nukki file"
+image_files = sorted([f for f in os.listdir(nukki_folder) if f.endswith(('.png', '.jpg', '.jpeg'))])
+image_paths = [os.path.join(nukki_folder, f) for f in image_files]
+
+for img_path in image_paths:
+    image = Image.open(img_path).convert("RGB")
+    input_tensor = transform(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        output = model(input_tensor)
+        probs = F.softmax(output, dim=1).cpu().numpy().flatten()
+        pred_idx = probs.argmax()
+        pred_label = class_names[pred_idx]
+
+
+
+
+
+
+    plt.figure(figsize=(5, 5))
+    plt.imshow(image)
+    plt.title(f"예측: {pred_label}\n파일명: {os.path.basename(img_path)}")
+    plt.axis("off")
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
